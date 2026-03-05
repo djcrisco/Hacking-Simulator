@@ -2,7 +2,7 @@
 
 An interactive browser-based terminal simulator built for fun. Features five distinct retro computing themes, live syntax-highlighted code scrolling, and a couple of hidden easter eggs.
 
-**[▶ Live Demo](https://djcrisco.github.io/Hacker-Simulator)** &nbsp;|&nbsp; **[Crisco Designs](https://criscodesigns.com)**
+**[▶ Live Demo](https://djcrisco.github.io/Hacker-Simulator)** &nbsp;|&nbsp; **[Crisco Designs](https://criscodesigns.co)**
 
 ---
 
