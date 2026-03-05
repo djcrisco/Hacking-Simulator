@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VIBE CODE</title>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#000300;--fg:#00ff41;--acc:#00cc33;--dim:#003d10;--fnt:'Share Tech Mono',monospace;--glow:0 0 6px #00ff41,0 0 18px #00ff4155;--sl:.12}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--fg);font-family:var(--fnt);overflow:hidden;transition:background .5s,color .5s}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(to bottom,transparent 0,transparent 2px,rgba(0,0,0,var(--sl)) 2px,rgba(0,0,0,var(--sl)) 4px);pointer-events:none;z-index:9999}
+@keyframes flicker{0%,100%{opacity:1}93%{opacity:.84}94%{opacity:1}97%{opacity:.91}98%{opacity:1}}
+#screen{display:flex;flex-direction:column;height:100vh;animation:flicker 9s infinite}
+#bar{display:flex;align-items:center;gap:6px;padding:9px 16px;border-bottom:1px solid var(--dim);background:rgba(0,0,0,.45);flex-shrink:0;flex-wrap:wrap;z-index:10}
+#bar label{font-size:11px;color:var(--dim);margin-right:4px;letter-spacing:2px;text-transform:uppercase}
+.tb{background:transparent;border:1px solid var(--dim);color:var(--dim);font-family:var(--fnt);font-size:11px;padding:4px 10px;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all .2s}
+.tb:hover,.tb.on{border-color:var(--fg);color:var(--fg);text-shadow:var(--glow);box-shadow:0 0 8px var(--acc)}
+.tb.on{background:rgba(255,255,255,.04)}
+#term{flex:1;overflow:hidden;padding:20px 24px;position:relative}
+#out{height:100%;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end}
+@keyframes fi{to{opacity:1}}
+.ln{font-size:14px;line-height:1.6;white-space:pre;text-shadow:var(--glow);opacity:0;animation:fi .12s forwards}
+.ln.d{opacity:.28!important;text-shadow:none}
+#irow{display:flex;align-items:center;padding:10px 24px 14px;border-top:1px solid var(--dim);gap:10px;flex-shrink:0}
+#prm{color:var(--acc);text-shadow:var(--glow);font-size:16px;flex-shrink:0}
+#inp{background:transparent;border:none;outline:none;color:var(--fg);font-family:var(--fnt);font-size:14px;flex:1;caret-color:var(--fg);text-shadow:var(--glow)}
+#hint{font-size:10px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;flex-shrink:0}
+#mc{display:none;position:absolute;inset:0;z-index:0}
+#term.mx #mc{display:block}
+#term.mx #out{position:relative;z-index:1}
+#g80,#h80{display:none;position:absolute;pointer-events:none;z-index:0}
+#g80{inset:0;background-image:linear-gradient(rgba(255,0,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,0,255,.07) 1px,transparent 1px);background-size:40px 40px}
+#h80{bottom:0;left:0;right:0;height:55%;background:linear-gradient(to top,rgba(255,0,190,.13),transparent)}
+
+/* SELF DESTRUCT */
+#sd{display:none;position:fixed;inset:0;background:#000;z-index:99999;align-items:center;justify-content:center;flex-direction:column;gap:18px;font-family:'Share Tech Mono',monospace}
+#sd.on{display:flex}
+@keyframes sp{from{opacity:1}to{opacity:.3}}
+#sda{color:#ff1100;font-size:clamp(7px,1vw,12px);text-shadow:0 0 10px #ff0000;line-height:1.35;white-space:pre;font-family:'Share Tech Mono',monospace;animation:sp .5s infinite alternate}
+#sdl{color:#ff4444;font-size:13px;text-align:center;line-height:2;max-width:560px;text-shadow:0 0 6px #ff0000}
+#sdbg{background:#1a0000;height:6px;border:1px solid #ff000055;width:420px;max-width:90vw}
+#sdb{height:6px;background:#ff0000;width:0%;box-shadow:0 0 14px #ff0000;transition:width .12s}
+
+/* SCOTTY DOESN'T KNOW */
+#scotty{display:none;position:fixed;inset:0;z-index:99998;align-items:center;justify-content:center;flex-direction:column;cursor:pointer;overflow:auto;transition:background .3s}
+#scotty.on{display:flex}
+@keyframes scottyin{from{transform:scale(.78) rotate(-3deg);opacity:0}to{transform:scale(1) rotate(0deg);opacity:1}}
+#sc-inner{animation:scottyin .55s cubic-bezier(.17,.67,.35,1.4) forwards;text-align:center;padding:24px 16px;max-width:99vw}
+#sc-lustra{font-size:clamp(22px,4vw,52px);letter-spacing:5px;margin-bottom:12px;font-style:italic}
+.sc-row{display:flex;justify-content:center;gap:4px;margin:4px 0}
+.sc-char{display:inline-block;line-height:1.2;white-space:pre;font-size:clamp(5px,.72vw,10px);padding:3px 4px;border:2px solid rgba(0,0,0,.4);box-shadow:4px 4px 0 rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.12)}
+.sc-dismiss{margin-top:22px;font-size:11px;letter-spacing:3px;text-transform:uppercase;animation:sp 1.6s infinite alternate}
+
+/* THEMES */
+body.t80{--bg:#0d001a;--fg:#ff00ff;--acc:#ff66ff;--dim:#55005a;--fnt:'VT323',monospace;--glow:0 0 9px #ff00ff,0 0 30px #ff00ff55;--sl:.17}
+body.t80 .ln{font-size:20px;line-height:1.35}
+body.t80 #inp{font-size:20px}
+body.t80 #g80,body.t80 #h80{display:block}
+body.t90{--bg:#c0c0c0;--fg:#000080;--acc:#0000cc;--dim:#808080;--fnt:'Courier Prime',monospace;--glow:none;--sl:0}
+body.t90 #screen,body.t90{background:#c0c0c0}
+body.t90 #term{background:#fff;border:3px inset #808080;margin:8px}
+body.t90 #bar{background:#000080;border-bottom:2px solid #000040}
+body.t90 #bar label,body.t90 .tb{color:#fff;border-color:#aaaaff}
+body.t90 .tb:hover,body.t90 .tb.on{background:#0000aa;color:#ffff00;border-color:#ffff00;box-shadow:none;text-shadow:none}
+body.t90 .ln{text-shadow:none;color:#000080}
+body.t90 .ln.d{color:#707070}
+body.t90 #irow{background:#d4d0c8;border-top:2px solid #808080}
+body.t90 #prm,body.t90 #inp{text-shadow:none;color:#000080}
+body.t90 #hint{color:#606060}
+body.t90 .tb{font-family:'Courier Prime',monospace}
+body.t2k{--bg:#071220;--fg:#a8d8ea;--acc:#00b4d8;--dim:#1a3545;--fnt:'Share Tech Mono',monospace;--glow:0 0 5px #00b4d8,0 0 14px #00b4d844;--sl:.06}
+body.t2k #screen{background:linear-gradient(155deg,#060e1c 0%,#071220 55%,#0c1e2e 100%)}
+body.tru{--bg:#080400;--fg:#ff6600;--acc:#ff8c00;--dim:#3a1600;--fnt:'Share Tech Mono',monospace;--glow:0 0 8px #ff6600,0 0 24px #ff660055;--sl:.2}
+body.tru #screen{background:radial-gradient(ellipse at center,#110600 0%,#080400 100%)}
+</style>
+</head>
+<body class="tmx" id="B">
+<div id="screen">
+  <div id="bar">
+    <label>// VIBE:</label>
+    <button class="tb on" data-t="tmx">[ MATRIX ]</button>
+    <button class="tb" data-t="t80">[ 80s ]</button>
+    <button class="tb" data-t="t90">[ 90s PC ]</button>
+    <button class="tb" data-t="t2k">[ 2000s ]</button>
+    <button class="tb" data-t="tru">[ ХАКЕР ]</button>
+  </div>
+  <div id="term">
+    <canvas id="mc"></canvas>
+    <div id="g80"></div><div id="h80"></div>
+    <div id="out"></div>
+  </div>
+  <div id="irow">
+    <div id="prm">❯</div>
+    <input id="inp" type="text" autocomplete="off" spellcheck="false" placeholder="ENTER to run... or type SELF-DESTRUCT" />
+    <div id="hint">ENTER = execute</div>
+  </div>
+</div>
+
+<!-- SELF DESTRUCT OVERLAY -->
+<div id="sd">
+  <div id="sda">
+ ██████╗ ███████╗███████╗████████╗██████╗ ██╗   ██╗ ██████╗████████╗
+ ██╔══██╗██╔════╝██╔════╝╚══██╔══╝██╔══██╗██║   ██║██╔════╝╚══██╔══╝
+ ██║  ██║█████╗  ███████╗   ██║   ██████╔╝██║   ██║██║        ██║
+ ██║  ██║██╔══╝  ╚════██║   ██║   ██╔══██╗██║   ██║██║        ██║
+ ██████╔╝███████╗███████║   ██║   ██║  ██║╚██████╔╝╚██████╗   ██║
+ ╚═════╝ ╚══════╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝  ╚═════╝   ╚═╝</div>
+  <div id="sdl"></div>
+  <div id="sdbg"><div id="sdb"></div></div>
+</div>
+
+<!-- SCOTTY DOESN'T KNOW OVERLAY -->
+<div id="scotty" onclick="closeScotty()">
+  <div id="sc-inner">
+    <div id="sc-lustra">~ Lustra ~</div>
+    <div id="sc-art"></div>
+    <div class="sc-dismiss" id="sc-dismiss">[ click anywhere to dismiss ]</div>
+  </div>
+</div>
+
+<script>
+const rI=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const rH=n=>[...Array(n)].map(()=>Math.floor(Math.random()*16).toString(16)).join('');
+const rS=n=>[...Array(n)].map(()=>'abcdefghijklmnopqrstuvwxyz'[rI(0,25)]).join('');
+const rIP=()=>`${rI(10,254)}.${rI(0,255)}.${rI(0,255)}.${rI(1,254)}`;
+const r01=()=>Math.random().toFixed(4);
+
+// ══════════════════════════════════════════════════════
+// SCOTTY DOESN'T KNOW — postcard block letter engine
+// ══════════════════════════════════════════════════════
+const ALPHA = {
+  'S': [
+    ' ███████╗',
+    ' ██╔════╝',
+    ' ███████╗',
+    ' ╚════██║',
+    ' ███████║',
+    ' ╚══════╝',
+  ],
+  'C': [
+    ' ██████╗ ',
+    '██╔════╝ ',
+    '██║      ',
+    '██║      ',
+    '╚██████╗ ',
+    ' ╚═════╝ ',
+  ],
+  'O': [
+    ' ██████╗ ',
+    '██╔═══██╗',
+    '██║   ██║',
+    '██║   ██║',
+    '╚██████╔╝',
+    ' ╚═════╝ ',
+  ],
+  'T': [
+    '████████╗',
+    '╚══██╔══╝',
+    '   ██║   ',
+    '   ██║   ',
+    '   ██║   ',
+    '   ╚═╝   ',
+  ],
+  'Y': [
+    '██╗   ██╗',
+    '╚██╗ ██╔╝',
+    ' ╚████╔╝ ',
+    '  ╚██╔╝  ',
+    '   ██║   ',
+    '   ╚═╝   ',
+  ],
+  'D': [
+    '██████╗ ',
+    '██╔══██╗',
+    '██║  ██║',
+    '██║  ██║',
+    '██████╔╝',
+    '╚═════╝ ',
+  ],
+  'E': [
+    '███████╗',
+    '██╔════╝',
+    '█████╗  ',
+    '██╔══╝  ',
+    '███████╗',
+    '╚══════╝',
+  ],
+  'N': [
+    '███╗   ██╗',
+    '████╗  ██║',
+    '██╔██╗ ██║',
+    '██║╚██╗██║',
+    '██║ ╚████║',
+    '╚═╝  ╚═══╝',
+  ],
+  "'": [
+    '██╗',
+    '╚═╝',
+    '   ',
+    '   ',
+    '   ',
+    '   ',
+  ],
+  'T2': [  // reuse T
+    '████████╗',
+    '╚══██╔══╝',
+    '   ██║   ',
+    '   ██║   ',
+    '   ██║   ',
+    '   ╚═╝   ',
+  ],
+  'K': [
+    '██╗  ██╗',
+    '██║ ██╔╝',
+    '█████╔╝ ',
+    '██╔═██╗ ',
+    '██║  ██╗',
+    '╚═╝  ╚═╝',
+  ],
+  'W': [
+    '██╗    ██╗',
+    '██║    ██║',
+    '██║ █╗ ██║',
+    '██║███╗██║',
+    '╚███╔███╔╝',
+    ' ╚══╝╚══╝ ',
+  ],
+  ' ': [
+    '   ',
+    '   ',
+    '   ',
+    '   ',
+    '   ',
+    '   ',
+  ],
+};
+
+// Postcard-style letter bg colors
+// Per-theme scotty styles
+const SCOTTY_THEMES = {
+  tmx: {
+    bg: '#001a00',
+    bgPattern: 'radial-gradient(ellipse at center, #003300 0%, #000a00 100%)',
+    letterColors: [
+      {bg:'#003d10',bd:'#00220a',fg:'#00ff41'},{bg:'#005520',bd:'#003010',fg:'#33ff66'},
+      {bg:'#006622',bd:'#003d10',fg:'#00ee44'},{bg:'#004d18',bd:'#002a0c',fg:'#00ff55'},
+      {bg:'#007730',bd:'#004d18',fg:'#00cc33'},{bg:'#002d0e',bd:'#001508',fg:'#39ff14'},
+    ],
+    lustraColor: '#00ff41',
+    lustraGlow: '0 0 10px #00ff41, 0 0 30px #00ff4188',
+    lustraFont: "'Share Tech Mono', monospace",
+    charFont: "'Share Tech Mono', monospace",
+    charColor: '#00ff41',
+    dismissColor: 'rgba(0,255,65,.3)',
+    charGlow: '0 0 6px #00ff41',
+    scanlines: true,
+  },
+  t80: {
+    bg: '#0d001a',
+    bgPattern: 'linear-gradient(160deg, #1a0033 0%, #0d001a 50%, #200040 100%)',
+    letterColors: [
+      {bg:'#5a005a',bd:'#330033',fg:'#ff00ff'},{bg:'#440044',bd:'#280028',fg:'#ff44ff'},
+      {bg:'#660066',bd:'#3d003d',fg:'#ff66ff'},{bg:'#3a003a',bd:'#200020',fg:'#ee00ee'},
+      {bg:'#770077',bd:'#4d004d',fg:'#ff88ff'},{bg:'#290029',bd:'#150015',fg:'#dd00dd'},
+    ],
+    lustraColor: '#ffff00',
+    lustraGlow: '0 0 12px #ffff00, 0 0 40px #ffff0088, 2px 2px 0 #aa8800',
+    lustraFont: "'VT323', monospace",
+    charFont: "'VT323', monospace",
+    charColor: '#ff00ff',
+    dismissColor: 'rgba(255,0,255,.3)',
+    charGlow: '0 0 8px #ff00ff, 0 0 20px #ff00ff55',
+    scanlines: true,
+  },
+  t90: {
+    bg: '#c0c0c0',
+    bgPattern: 'linear-gradient(135deg, #d4d0c8 0%, #c0c0c0 40%, #b0b0b0 100%)',
+    letterColors: [
+      {bg:'#000080',bd:'#000050',fg:'#ffffff'},{bg:'#800000',bd:'#500000',fg:'#ffffff'},
+      {bg:'#008000',bd:'#005000',fg:'#ffffff'},{bg:'#808000',bd:'#505000',fg:'#ffffff'},
+      {bg:'#000080',bd:'#000060',fg:'#ffff00'},{bg:'#800080',bd:'#500050',fg:'#ffffff'},
+    ],
+    lustraColor: '#000080',
+    lustraGlow: 'none',
+    lustraFont: "'Courier Prime', monospace",
+    charFont: "'Courier Prime', monospace",
+    charColor: '#ffffff',
+    dismissColor: 'rgba(0,0,128,.5)',
+    charGlow: 'none',
+    scanlines: false,
+  },
+  t2k: {
+    bg: '#071220',
+    bgPattern: 'radial-gradient(ellipse at 30% 40%, #0a2040 0%, #071220 60%, #050e18 100%)',
+    letterColors: [
+      {bg:'#00537a',bd:'#003550',fg:'#a8d8ea'},{bg:'#006080',bd:'#003d55',fg:'#90e0ef'},
+      {bg:'#004d6e',bd:'#002e44',fg:'#caf0f8'},{bg:'#007090',bd:'#004a60',fg:'#ade8f4'},
+      {bg:'#0077a0',bd:'#004d6e',fg:'#48cae4'},{bg:'#003d5a',bd:'#002236',fg:'#90e0ef'},
+    ],
+    lustraColor: '#00b4d8',
+    lustraGlow: '0 0 10px #00b4d8, 0 0 30px #00b4d866',
+    lustraFont: "'Share Tech Mono', monospace",
+    charFont: "'Share Tech Mono', monospace",
+    charColor: '#caf0f8',
+    dismissColor: 'rgba(0,180,216,.35)',
+    charGlow: '0 0 5px #00b4d8',
+    scanlines: false,
+  },
+  tru: {
+    bg: '#0d0500',
+    bgPattern: 'radial-gradient(ellipse at center, #1a0800 0%, #080400 100%)',
+    letterColors: [
+      {bg:'#7a2800',bd:'#4a1500',fg:'#ff9944'},{bg:'#8a3000',bd:'#5a1800',fg:'#ffaa55'},
+      {bg:'#6a2000',bd:'#3d1000',fg:'#ff8833'},{bg:'#993500',bd:'#661c00',fg:'#ffbb66'},
+      {bg:'#5a1a00',bd:'#330d00',fg:'#ff7722'},{bg:'#aa3c00',bd:'#772200',fg:'#ffcc77'},
+    ],
+    lustraColor: '#ff6600',
+    lustraGlow: '0 0 10px #ff6600, 0 0 35px #ff660077',
+    lustraFont: "'Share Tech Mono', monospace",
+    charFont: "'Share Tech Mono', monospace",
+    charColor: '#ffaa55',
+    dismissColor: 'rgba(255,102,0,.35)',
+    charGlow: '0 0 8px #ff6600',
+    scanlines: true,
+  },
+};
+
+let lci = 0;
+
+function buildScottyLetter(ch, themeStyle) {
+  const rows = ALPHA[ch] || ALPHA[' '];
+  if (ch === ' ') {
+    const sp = document.createElement('span');
+    sp.style.cssText = 'display:inline-block;width:0.6em';
+    return sp;
+  }
+  const clr = themeStyle.letterColors[lci++ % themeStyle.letterColors.length];
+  const el = document.createElement('div');
+  el.className = 'sc-char';
+  el.style.cssText = [
+    `background:${clr.bg}`,
+    `border-color:${clr.bd}`,
+    `color:${clr.fg}`,
+    `font-family:${themeStyle.charFont}`,
+    themeStyle.charGlow !== 'none' ? `text-shadow:${themeStyle.charGlow}` : '',
+  ].filter(Boolean).join(';');
+  el.textContent = rows.join('\n');
+  return el;
+}
+
+function scottyDoesntKnow() {
+  lci = 0;
+  const ts = SCOTTY_THEMES[theme];
+  const ov = document.getElementById('scotty');
+  const lustra = document.getElementById('sc-lustra');
+  const dismiss = document.getElementById('sc-dismiss');
+  const art = document.getElementById('sc-art');
+
+  // Apply theme bg
+  ov.style.background = ts.bgPattern;
+
+  // Apply lustra style
+  lustra.style.cssText = [
+    `color:${ts.lustraColor}`,
+    ts.lustraGlow !== 'none' ? `text-shadow:${ts.lustraGlow}` : 'text-shadow:none',
+    `font-family:${ts.lustraFont}`,
+  ].join(';');
+
+  // Apply dismiss style
+  dismiss.style.cssText = `color:${ts.dismissColor};font-family:${ts.charFont}`;
+
+  // Scanlines overlay on scotty
+  ov.style.setProperty('--sc-sl', ts.scanlines ? '.14' : '0');
+
+  // Build letters
+  art.innerHTML = '';
+  ['SCOTTY', "DOESN'T", 'KNOW'].forEach(word => {
+    const row = document.createElement('div');
+    row.className = 'sc-row';
+    word.split('').forEach(ch => row.appendChild(buildScottyLetter(ch, ts)));
+    art.appendChild(row);
+  });
+
+  // Re-trigger animation by clone trick
+  const inner = document.getElementById('sc-inner');
+  inner.style.animation = 'none';
+  inner.offsetHeight; // reflow
+  inner.style.animation = '';
+
+  ov.classList.add('on');
+}
+
+function closeScotty() {
+  document.getElementById('scotty').classList.remove('on');
+}
+
+// ══════════════════════════════════════════════════════
+// SNIPPET POOLS
+// ══════════════════════════════════════════════════════
+const POOLS={
+tmx:[
+  ()=>`  // LOADING CONSTRUCT — sector ${rH(4).toUpperCase()} depth:${rI(3,12)}`,
+  ()=>`  Agent.locate(target="${rH(6)}", mode='silent').extract();`,
+  ()=>`  const signal = await jack_in(port=${rI(1024,65535)}, depth=${rI(4,12)});`,
+  ()=>`  if (signal.depth > ${rI(7,12)}) fold_reality(signal, freq=${rI(400,900)});`,
+  ()=>`  for (let i=0; i<${rI(100,999)}; i++) stream.push(encode(residual[i]));`,
+  ()=>`  decrypt(buf, KEY_${rH(8).toUpperCase()}, 'aes-256-cbc');`,
+  ()=>`  // redpill.exe — residual self-image: ${rI(87,100)}% intact`,
+  ()=>`  while(awake) { perceive(); question(); choose(); accept_fate(); }`,
+  ()=>`  Matrix.patch(node_${rI(100,999)}, { glitch: ${r01()}, persist: false });`,
+  ()=>`  // The Matrix has you. Follow the white rabbit. — 0x${rH(8)}`,
+  ()=>`  spawn('agent', { target: 'zion', priority: URGENT, trace: false });`,
+  ()=>`  reality.texture = noise(seed=${rI(0,9999)}, octaves=8, lacunarity=2.0);`,
+  ()=>`  if (chosen) { dodge(bullets); rewrite(physics); transcend(); }`,
+  ()=>`  loadModule('nebuchadnezzar.core.v${rI(2,9)}.${rI(0,9)}');`,
+  ()=>`  ${rH(32)}  // sector 0x${rH(4).toUpperCase()}`,
+  ()=>`  zion.broadcast({ encrypted: true, hops: ${rI(3,9)}, route: 'tor' });`,
+  ()=>`  // EMP primed — radius ${rI(50,500)}m — Nebuchadnezzar standing by`,
+  ()=>`  construct.exit(agent_id='${rH(6)}', wipe_trace=true);`,
+  ()=>`  oracle.query("what is the ${rS(5)} of ${rS(6)}?");`,
+  ()=>`  anomaly.resolve({ iteration: ${rI(5,21)}, reinsert: true });`,
+  ()=>`  Smith.replicate(host='agent_${rH(4)}', overwrite=true);`,
+],
+t80:[
+  ()=>`  10 PRINT "GREETINGS PROFESSOR FALKEN"`,
+  ()=>`  20 IF DEFCON = 1 THEN GOTO 999`,
+  ()=>`  30 FOR I=1 TO ${rI(10,99)}: POKE ${rI(40000,55000)},${rI(0,255)}: NEXT I`,
+  ()=>`  40 LOAD "${rS(6).toUpperCase()}.EXE",8,1`,
+  ()=>`  50 SYS ${rI(40000,65000)}`,
+  ()=>`  60 DATA ${[...Array(8)].map(()=>rI(0,255)).join(',')}`,
+  ()=>`  REM *** TURBO PASCAL v3.0 — BORLAND 1983 ***`,
+  ()=>`  PROGRAM SynthWave_${rI(1,9)}; BEGIN WriteLn('${rH(4).toUpperCase()}'); END.`,
+  ()=>`  READLN(laser_grid); IF laser_grid > MAX_INT THEN HALT(1);`,
+  ()=>`  SCREEN 9: COLOR ${rI(1,15)},${rI(0,7)}: CLS: LOCATE 1,1`,
+  ()=>`  CIRCLE (${rI(100,500)},${rI(50,300)}),${rI(20,150)},${rI(1,15)}`,
+  ()=>`  PLAY "MBT${rI(100,200)}L${rI(4,16)}CDECDECD${rS(4).toUpperCase()}"`,
+  ()=>`  BSAVE "${rS(4).toUpperCase()}.BIN",${rI(40000,55000)},${rI(64,512)}`,
+  ()=>`  ' ${rI(32,64)}K base RAM — HIMEM.SYS loaded`,
+  ()=>`  PSET (${rI(0,319)},${rI(0,199)}),${rI(1,15)}`,
+  ()=>`  ON ERROR GOTO 9999: RESUME NEXT`,
+  ()=>`  *** SYNTAX ERROR IN LINE ${rI(10,990)*10} ***`,
+  ()=>`  ?OUT OF MEMORY IN LINE ${rI(100,9000)}`,
+  ()=>`  GOSUB ${rI(100,900)*10}: REM sprite engine v${rI(1,3)}.${rI(0,9)}`,
+  ()=>`  IF PEEK(${rI(49000,55000)}) = ${rI(0,255)} THEN BEEP: GOTO ${rI(10,90)*10}`,
+  ()=>`  10 DIM A(${rI(50,200)}): FOR J=0 TO ${rI(10,50)}: A(J)=INT(RND*255): NEXT`,
+  ()=>`  COLOR 7,1: PRINT "INSERT DISK IN DRIVE A:"`,
+],
+t90:[
+  ()=>`  /* Netscape Navigator ${rI(2,4)}.0 compatible — tested IE 3 too */`,
+  ()=>`  <BLINK>SITE UNDER CONSTRUCTION — CHECK BACK SOON!</BLINK>`,
+  ()=>`  document.write('<MARQUEE scrollamount=3>' + msg + '</MARQUEE>');`,
+  ()=>`  if (document.layers) { ns4fix(); } else if (document.all) { ie4fix(); }`,
+  ()=>`  void ${rS(6)}_init(int argc, char** argv) {`,
+  ()=>`    printf("C:\\>WIN /3\\n"); WinExec("progman.exe", SW_SHOW);`,
+  ()=>`  #include <windows.h>  /* Win32 SDK — MSVC 4.${rI(0,2)} */`,
+  ()=>`  RegSetValueEx(hKey, "Run", 0, REG_SZ, (BYTE*)path, strlen(path)+1);`,
+  ()=>`  // TODO: Y2K compliance before 12/31/1999 !!`,
+  ()=>`  typedef unsigned long DWORD; typedef unsigned short WORD;`,
+  ()=>`  SELECT * FROM users WHERE password = '${rH(8)}' -- no hashing lol`,
+  ()=>`  CGI::param('q') =~ s/[<>"']//g;  # XSS filter (barely)`,
+  ()=>`  <TABLE WIDTH="100%" CELLPADDING=4 CELLSPACING=0 BORDER=0>`,
+  ()=>`  // AOL Instant Messenger SDK v${rI(2,4)}.${rI(0,9)}`,
+  ()=>`  winsock_init(MAKEWORD(1,1)); // 16-bit winsock only!`,
+  ()=>`  /* Best viewed 800x600, 256 colours, frames enabled */`,
+  ()=>`  msgbox "Fatal Error ${rI(100,999)}: Illegal Operation in ${rS(6)}.dll"`,
+  ()=>`  .class public ${rS(6)} extends java/lang/Object`,
+  ()=>`  // IRQ conflict on COM${rI(1,4)} — disable SB16 in BIOS`,
+  ()=>`  fdisk /mbr  REM restore MBR — see README.TXT`,
+  ()=>`  <FONT FACE="Comic Sans MS" SIZE=+2 COLOR="#${rH(6)}">WELCOME!</FONT>`,
+],
+t2k:[
+  ()=>`  $.ajax({ url: '/api/v2/${rS(6)}', type: 'POST', dataType: 'json' });`,
+  ()=>`  // Web 2.0 is the future — AJAX everything (${rI(2004,2009)})`,
+  ()=>`  <div class="rounded-corners glossy-btn drop-shadow-lg web2">`,
+  ()=>`  flash.addEventListener("onLoadComplete", handler_${rS(4)});`,
+  ()=>`  require_once('db.php'); $conn = mysql_connect($host, $user, $pass);`,
+  ()=>`  $q = "SELECT * FROM posts WHERE id=" . $_GET['id']; // sqli 😬`,
+  ()=>`  // TODO: replace with SOAP web service (see attached WSDL)`,
+  ()=>`  xhr.open('GET', '/feed.xml?t=' + new Date().getTime(), true);`,
+  ()=>`  def blog_post(req): return render_to_response('post.html', ctx)`,
+  ()=>`  gem install rails --version 1.2.${rI(1,6)} && rake db:migrate`,
+  ()=>`  // Ruby on Rails: DRY + REST + Convention over Config`,
+  ()=>`  MySpace.layout.set({ cols: 2, bg: '#${rH(6)}', cursor: 'sparkle' });`,
+  ()=>`  <iframe src="counter.php?id=${rI(1000,9999)}" frameborder="0"></iframe>`,
+  ()=>`  Digg.api.submit({ url, title, topic: 'tech' });  // RIP 2012`,
+  ()=>`  del.icio.us.tag(url, ['${rS(5)}','web2.0','cool','ajax']);`,
+  ()=>`  $smarty->assign('v', '${rI(2,5)}.${rI(0,9)}.${rI(0,9)}'); $smarty->display();`,
+  ()=>`  <!-- powered by WordPress ${rI(1,2)}.${rI(0,9)}.${rI(0,9)} -->`,
+  ()=>`  addslashes($_POST['comment']); // "security"`,
+  ()=>`  // optimised for IE7 — Firefox support: "coming soon"`,
+],
+tru:[
+  ()=>`  // СИСТЕМА ИНИЦИАЛИЗИРОВАНА — уровень доступа: ОМЕГА`,
+  ()=>`  exploit.load('ms${rI(2000,2014)}_${rI(1000,9999)}', target='${rIP()}');`,
+  ()=>`  // Красный Октябрь :: пакет ${rH(4).toUpperCase()} перехвачен`,
+  ()=>`  decrypt_rsa(payload, key=PRIV_${rH(8).toUpperCase()}, padding='OAEP');`,
+  ()=>`  // ШИФРОВАНИЕ AES-256 ... блок ${rI(1,999)} из ${rI(1000,9999)}`,
+  ()=>`  proxy_chain.add('${rIP()}:${rI(1080,9999)}');  // Москва -> Берлин`,
+  ()=>`  if (firewall.detect()) { spoof_mac(); reroute_tor(); inject_noise(); }`,
+  ()=>`  upload(payload='${rS(8)}.bin', target='SVR_${rH(4).toUpperCase()}');`,
+  ()=>`  // ВНИМАНИЕ: операция санкционирована на высшем уровне`,
+  ()=>`  nmap -sS -O -A -p- ${rIP()} --spoof-mac Dell --data-length ${rI(20,60)}`,
+  ()=>`  Goldeneye.arm(sat='GE-${rI(1,9)}', freq=${rI(900,2400)}, countdown=${rI(30,90)});`,
+  ()=>`  // перехват завершён — ${rI(10,999)} МБ зашифровано`,
+  ()=>`  ssh root@${rIP()} -i ~/.ssh/id_rsa_${rS(4)} -p ${rI(22,2200)}`,
+  ()=>`  // КГБ_АРХИВ :: файл ${rH(6).toUpperCase()} — СОВЕРШЕННО СЕКРЕТНО`,
+  ()=>`  wipe_logs(host='${rIP()}', passes=7, method='DoD_5220.22-M');`,
+  ()=>`  // Janus протокол: уничтожение личности через ${rI(3,9)} сек`,
+  ()=>`  бункер.статус = АКТИВЕН; боеголовки.статус = ГОТОВ;`,
+  ()=>`  Severnaya.uplink(freq=${rI(900,2400)}MHz, auth='VOICE_PRINT_OK');`,
+  ()=>`  rootkit.install(target='${rIP()}', persist='bootloader', stealth=9);`,
+  ()=>`  // операция "${rS(rI(5,8)).toUpperCase()}" — фаза ${rI(2,4)} из ${rI(5,7)}`,
+  ()=>`  bruteforce.run(target='${rIP()}', dict='rockyou.txt', threads=${rI(8,64)});`,
+]};
+
+const BIGS={
+tmx:[
+  ['  ███╗   ██╗███████╗ ██████╗ ',
+   '  ████╗  ██║██╔════╝██╔═══██╗',
+   '  ██╔██╗ ██║█████╗  ██║   ██║',
+   '  ██║╚██╗██║██╔══╝  ██║   ██║',
+   '  ██║ ╚████║███████╗╚██████╔╝',
+   '  ╚═╝  ╚═══╝╚══════╝ ╚═════╝ '],
+  ['  ██╗   ██╗ ██████╗ ██╗██████╗ ',
+   '  ██║   ██║██╔═══██╗██║██╔══██╗',
+   '  ██║   ██║██║   ██║██║██║  ██║',
+   '  ╚██╗ ██╔╝██║   ██║██║██║  ██║',
+   '   ╚████╔╝ ╚██████╔╝██║██████╔╝',
+   '    ╚═══╝   ╚═════╝ ╚═╝╚═════╝ '],
+  ['  ███████╗██╗  ██╗███████╗ ██████╗',
+   '  ██╔════╝╚██╗██╔╝██╔════╝██╔════╝',
+   '  █████╗   ╚███╔╝ █████╗  ██║     ',
+   '  ██╔══╝   ██╔██╗ ██╔══╝  ██║     ',
+   '  ███████╗██╔╝ ██╗███████╗╚██████╗',
+   '  ╚══════╝╚═╝  ╚═╝╚══════╝ ╚═════╝'],
+],
+t80:[
+  ['  ██████╗ ██╗   ██╗███╗   ██╗██╗',
+   '  ██╔══██╗██║   ██║████╗  ██║██║',
+   '  ██████╔╝██║   ██║██╔██╗ ██║██║',
+   '  ██╔══██╗██║   ██║██║╚██╗██║╚═╝',
+   '  ██║  ██║╚██████╔╝██║ ╚████║██╗',
+   '  ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝'],
+  ['  ██╗      ██████╗  ██████╗ ██████╗',
+   '  ██║     ██╔═══██╗██╔═══██╗██╔══██╗',
+   '  ██║     ██║   ██║██║   ██║██████╔╝',
+   '  ██║     ██║   ██║██║   ██║██╔═══╝ ',
+   '  ███████╗╚██████╔╝╚██████╔╝██║     ',
+   '  ╚══════╝ ╚═════╝  ╚═════╝ ╚═╝     '],
+],
+t90:[
+  ['  ██████╗ ██████╗ ███████╗',
+   '  ██╔══██╗██╔══██╗██╔════╝',
+   '  ██████╔╝██████╔╝█████╗  ',
+   '  ██╔═══╝ ██╔══██╗██╔══╝  ',
+   '  ██║     ██║  ██║███████╗',
+   '  ╚═╝     ╚═╝  ╚═╝╚══════╝'],
+],
+t2k:[
+  ['  ██╗    ██╗███████╗██████╗     ██████╗  ██████╗',
+   '  ██║    ██║██╔════╝██╔══██╗    ╚════██╗██╔═████╗',
+   '  ██║ █╗ ██║█████╗  ██████╔╝     █████╔╝██║██╔██║',
+   '  ██║███╗██║██╔══╝  ██╔══██╗    ██╔═══╝ ████╔╝██║',
+   '  ╚███╔███╔╝███████╗██████╔╝    ███████╗╚██████╔╝',
+   '   ╚══╝╚══╝ ╚══════╝╚═════╝     ╚══════╝ ╚═════╝ '],
+],
+tru:[
+  ['  ██╗  ██╗ █████╗  ██████╗██╗  ██╗███████╗██████╗',
+   '  ██║  ██║██╔══██╗██╔════╝██║ ██╔╝██╔════╝██╔══██╗',
+   '  ███████║███████║██║     █████╔╝ █████╗  ██████╔╝',
+   '  ██╔══██║██╔══██║██║     ██╔═██╗ ██╔══╝  ██╔══██╗',
+   '  ██║  ██║██║  ██║╚██████╗██║  ██╗███████╗██║  ██║',
+   '  ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝'],
+  ['  ██████╗ ██████╗ ███████╗██╗  ██╗██╗',
+   '  ██╔══██╗██╔══██╗██╔════╝╚██╗██╔╝██║',
+   '  ██████╔╝██████╔╝█████╗   ╚███╔╝ ██║',
+   '  ██╔═══╝ ██╔══██╗██╔══╝   ██╔██╗ ██║',
+   '  ██║     ██║  ██║███████╗██╔╝ ██╗██║',
+   '  ╚═╝     ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝'],
+]};
+
+const COLORS={
+  tmx:{kw:'#00ff41',str:'#00dd99',num:'#39ff14',cmt:'#006622',fn:'#55ffcc'},
+  t80:{kw:'#ff00ff',str:'#ffaaff',num:'#ffff00',cmt:'#880099',fn:'#ff66ff'},
+  t90:{kw:'#000080',str:'#800000',num:'#006600',cmt:'#707070',fn:'#0000aa'},
+  t2k:{kw:'#00b4d8',str:'#48cae4',num:'#90e0ef',cmt:'#2a5566',fn:'#0096c7'},
+  tru:{kw:'#ff6600',str:'#ffaa44',num:'#ffcc00',cmt:'#5a2200',fn:'#ff8833'},
+};
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function col(s){
+  const c=COLORS[theme];let o=esc(s);
+  o=o.replace(/(\/\/[^\n]*|\/\*[\s\S]*?\*\/|REM [^\n]*)/g,m=>`<i style="color:${c.cmt}">${m}</i>`);
+  o=o.replace(/('[^'<>]*'|"[^"<>]*")/g,m=>`<span style="color:${c.str}">${m}</span>`);
+  o=o.replace(/\b(\d+(?:\.\d+)?)\b/g,`<span style="color:${c.num}">$1</span>`);
+  o=o.replace(/\b(if|else|for|while|return|const|let|var|function|async|await|def|class|import|from|true|false|null|void|int|char|GOTO|PRINT|FOR|NEXT|IF|THEN|POKE|PEEK|PLAY|DATA|SCREEN|LOAD|BSAVE|GOSUB|REM|SELECT|FROM|WHERE|WITH|AND|OR|NOT|CREATE|UPDATE|INSERT|BEGIN|END|DO|LOOP)\b/g,
+    `<b style="color:${c.kw}">$1</b>`);
+  o=o.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)(?=\s*\()/g,`<span style="color:${c.fn}">$1</span>`);
+  return o;
+}
+
+// Matrix rain
+const cv=document.getElementById('mc'),cx=cv.getContext('2d');
+let drops=[],mraf=null;
+function initM(){cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;drops=Array(Math.floor(cv.width/16)).fill(1);}
+function drawM(){
+  cx.fillStyle='rgba(0,3,0,0.05)';cx.fillRect(0,0,cv.width,cv.height);
+  cx.fillStyle='#00ff41';cx.font='14px Share Tech Mono';
+  drops.forEach((y,i)=>{cx.fillText(String.fromCharCode(0x30A0+Math.random()*96),i*16,y*16);if(y*16>cv.height&&Math.random()>.975)drops[i]=0;drops[i]++;});
+}
+function startM(){document.getElementById('term').classList.add('mx');initM();(function L(){drawM();mraf=requestAnimationFrame(L)})();}
+function stopM(){document.getElementById('term').classList.remove('mx');if(mraf){cancelAnimationFrame(mraf);mraf=null;}cx.clearRect(0,0,cv.width,cv.height);}
+
+// Theme
+let theme='tmx',bn=0;
+function setTheme(t){
+  theme=t;document.getElementById('B').className=t;
+  t==='tmx'?startM():stopM();
+  document.querySelectorAll('.tb').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  document.getElementById('out').innerHTML='';bn=0;burst();
+}
+document.querySelectorAll('.tb').forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.t)));
+
+// Output
+const out=document.getElementById('out');
+function add(html,dim){
+  const d=document.createElement('div');d.className='ln'+(dim?' d':'');
+  d.innerHTML=html;out.appendChild(d);
+  while(out.children.length>60)out.children[0].remove();
+}
+
+function burst(){
+  bn++;
+  const pool=POOLS[theme],n=rI(11,19);
+  const lines=[...Array(n)].map(()=>pool[rI(0,pool.length-1)]());
+  for(let i=0;i<rI(1,4);i++)lines.splice(rI(1,lines.length-1),0,'');
+  const bags=BIGS[theme];let big=[];
+  if(bags&&Math.random()<.28){big=bags[rI(0,bags.length-1)];const at=rI(2,Math.max(2,lines.length-big.length-2));lines.splice(at,0,'',...big.map(l=>'__B__'+l),'');}
+  if(bn>1){add('',false);const sep='  '+(theme==='t90'?'─':'·').repeat(52);add(`<span style="color:var(--dim)">${esc(sep)}</span>`,true);add('',false);}
+  const bc=COLORS[theme].kw;
+  lines.forEach((ln,i)=>setTimeout(()=>{
+    if(!ln)add('',false);
+    else if(ln.startsWith('__B__'))add(`<span style="color:${bc};text-shadow:var(--glow)">${esc(ln.slice(5))}</span>`,false);
+    else add(col(ln),false);
+  },i*40));
+}
+
+// Input — handles all three commands
+const inp=document.getElementById('inp');
+inp.addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  const v=inp.value.trim().toUpperCase();inp.value='';
+  if(v==='SELF-DESTRUCT') selfDestruct();
+  else if(v==="SCOTTY DOESN'T KNOW"||v==='SCOTTY DOESNT KNOW') scottyDoesntKnow();
+  else burst();
+});
+document.addEventListener('click',()=>inp.focus());
+
+// Self destruct
+const SDSTEPS=['purging symbol table...','zeroing '+rI(128,512)+' stack frames...','triggering double-free cascade...','corrupting heap allocator...','terminating '+rI(12,88)+' child processes...','revoking TLS certificates...','overwriting boot sector [ simulated ]','shredding /dev/null [ ironically ]','collapsing event loop...','— ALL SYSTEMS OFFLINE —'];
+function selfDestruct(){
+  const ov=document.getElementById('sd'),lg=document.getElementById('sdl'),bar=document.getElementById('sdb');
+  ov.classList.add('on');lg.innerHTML='';bar.style.width='0%';
+  let s=0;
+  (function tick(){
+    if(s>=SDSTEPS.length){setTimeout(()=>{ov.classList.remove('on');out.innerHTML='';bn=0;burst();},1400);return;}
+    bar.style.width=Math.round((s+1)/SDSTEPS.length*100)+'%';
+    lg.innerHTML+=SDSTEPS[s]+'<br>';s++;
+    setTimeout(tick,270+rI(0,190));
+  })();
+}
+
+window.addEventListener('load',()=>{startM();burst();inp.focus();});
+window.addEventListener('resize',()=>{if(theme==='tmx')initM();});
+</script>
+</body>
+</html>
